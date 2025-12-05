@@ -119,7 +119,7 @@ const IceMonsters = {
         this.survivalTime = Math.floor((Date.now() - this.gameStartTime) / 1000);
         const bonusScore = 1000 + (this.survivalTime * 10);
         this.score += bonusScore;
-        
+        WorldEvents.resetSnowstorm(scene);
         // Hide game over first
         const gameOver = document.getElementById('game-over');
         if (gameOver) gameOver.style.display = 'none';

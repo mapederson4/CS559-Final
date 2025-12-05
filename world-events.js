@@ -525,6 +525,46 @@ intensifySnowstorm(scene) {
     console.warn("⚠ ULTRA SNOWSTORM ACTIVATED — GOOD LUCK.");
 },
 
+// Add this to WorldEvents
+resetSnowstorm(scene) {
+    console.log("❄️ Snowstorm ended.");
+
+    // Reset background
+    if (scene.background && scene.background.isColor) {
+        scene.background.setHex(0xD4E8F7); // original winter sky
+    }
+
+    // Reset fog
+    if (scene.fog) {
+        scene.fog.near = 30;
+        scene.fog.far = 50;
+    }
+
+    // Reset snowflakes
+    if (window.snowflakes) {
+        window.snowflakes.forEach(flake => {
+            flake.userData.fallSpeed = 0.1 + Math.random() * 0.1;
+            flake.userData.driftSpeed = (Math.random() - 0.5) * 0.1;
+            flake.userData.stormShake = false;
+        });
+    }
+
+    // Disable wind effects
+    window.windEffect = false;
+    window.windPower = 0;
+
+    // Stop camera shake
+    window.extremeCameraShake = false;
+
+    // Reset lights
+    scene.traverse(obj => {
+        if (obj.isPointLight && obj.userData.flicker) {
+            obj.intensity = 1;
+            obj.distance = 50;
+            obj.userData.flicker = false;
+        }
+    });
+},
     
     spawnGoldenButterfly(scene, player) {
         const butterflyGroup = new THREE.Group();
