@@ -46,20 +46,38 @@ const WorldEvents = {
                         const runInterval = setInterval(() => {
                             const elapsed = Date.now() - startTime;
                             const progress = Math.min(elapsed / runDuration, 1);
-                            
-                            olafChar.position.x = startPos.x + (playerPos.x - startPos.x) * progress;
-                            olafChar.position.z = startPos.z + (playerPos.z - startPos.z) * progress;
-                            
-                            // Wobble while running
+
+                            // Desired target offset so Olaf stops NEXT TO Elsa
+                            const desiredDistance = 2; // Olaf stops 2 units away
+
+                            const dx = playerPos.x - startPos.x;
+                            const dz = playerPos.z - startPos.z;
+
+                            const dist = Math.sqrt(dx*dx + dz*dz);
+
+                            // NORMALIZED direction to Elsa
+                            const dirX = dx / dist;
+                            const dirZ = dz / dist;
+
+                            // Olaf target = Elsa position MINUS a safety offset
+                            const targetX = playerPos.x - dirX * desiredDistance;
+                            const targetZ = playerPos.z - dirZ * desiredDistance;
+
+                            // Animate towards the offset target
+                            olafChar.position.x = startPos.x + (targetX - startPos.x) * progress;
+                            olafChar.position.z = startPos.z + (targetZ - startPos.z) * progress;
+
+                            // Cute wobble
                             olafChar.position.y = Math.abs(Math.sin(elapsed * 0.01)) * 0.3;
-                            
+
+                            // Stop animation
                             if (progress >= 1) {
                                 clearInterval(runInterval);
-                                // Olaf jumps excitedly
                                 WorldEvents.createSpeechBubble(olafChar.position, '⚠️', 3000);
                                 WorldEvents.olafJumpExcited(olafChar);
                             }
                         }, 16);
+
                     } else {
                         console.log('❌ Could not find Olaf character');
                     }
@@ -336,26 +354,97 @@ const WorldEvents = {
     },
     
     reindeerDefenseMode(character, player) {
-        console.log('🦌 Starting reindeer defense mode animation');
-        let angle = 0;
-        const radius = 3;
-        const duration = 10000;
+        console.log('🦌 Reindeer rearing animation triggered!');
+
+        // --- CONFIG ---
+        const rearHeight = 2.5;     // how high the front lifts
+        const rearTilt = -0.8;      // tilt backwards
+        const duration = 1500;      // total animation time
+        const smokeCount = 12;      // number of smoke particles
+
         const startTime = Date.now();
-        
-        const circleInterval = setInterval(() => {
-            const elapsed = Date.now() - startTime;
-            if (elapsed > duration) {
-                clearInterval(circleInterval);
-                console.log('🦌 Reindeer defense mode ended');
-                return;
+        const startY = character.position.y;
+        const startRotX = character.rotation.x;
+
+        // SMOKE PUFF FUNCTION
+        const spawnSmokePuff = () => {
+            for (let i = 0; i < smokeCount; i++) {
+                const smoke = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.2, 8, 8),
+                    new THREE.MeshPhongMaterial({
+                        color: 0xffffff,
+                        transparent: true,
+                        opacity: 0.9
+                    })
+                );
+
+                smoke.position.copy(character.position);
+                smoke.position.y += 0.2;
+
+                smoke.userData = {
+                    vx: (Math.random() - 0.5) * 0.6,
+                    vy: Math.random() * 0.5 + 0.2,
+                    vz: (Math.random() - 0.5) * 0.6,
+                    life: 800 + Math.random() * 300
+                };
+
+                window.scene.add(smoke);
+
+                // Animate each particle
+                const puffStart = Date.now();
+                const puffInterval = setInterval(() => {
+                    const t = Date.now() - puffStart;
+                    const p = smoke.userData;
+
+                    smoke.position.x += p.vx * 0.1;
+                    smoke.position.y += p.vy * 0.05;
+                    smoke.position.z += p.vz * 0.1;
+
+                    smoke.material.opacity = Math.max(0, 1 - t / p.life);
+
+                    if (t > p.life) {
+                        clearInterval(puffInterval);
+                        window.scene.remove(smoke);
+                    }
+                }, 16);
             }
-            
-            angle += 0.05;
-            character.position.x = player.position.x + Math.cos(angle) * radius;
-            character.position.z = player.position.z + Math.sin(angle) * radius;
-            character.rotation.y = angle + Math.PI / 2;
+        };
+
+        // MAIN REARING ANIMATION
+        const anim = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const progress = elapsed / duration;
+
+            // GOING UP (first half)
+            if (progress < 0.5) {
+                const p = progress * 2;
+                character.position.y = startY + rearHeight * p;
+                character.rotation.x = startRotX + rearTilt * p;
+
+            // FALLING BACK DOWN (second half)
+            } else {
+                const p = (progress - 0.5) * 2;
+                character.position.y = startY + rearHeight * (1 - p);
+                character.rotation.x = startRotX + rearTilt * (1 - p);
+            }
+
+            // Emit smoke near the peak
+            if (progress > 0.45 && progress < 0.55) {
+                spawnSmokePuff();
+            }
+
+            if (progress >= 1) {
+                clearInterval(anim);
+
+                // restore exact base posture
+                character.position.y = startY;
+                character.rotation.x = startRotX;
+
+                console.log("🦌 Reindeer rearing complete!");
+            }
         }, 16);
     },
+
     
     olafCelebrate(character) {
         let celebrateTime = 0;
@@ -388,22 +477,54 @@ const WorldEvents = {
         }, 16);
     },
     
-    intensifySnowstorm(scene) {
-        // Darken sky
-        if (scene.background && scene.background.isColor) {
-            scene.background.setHex(0x4A5F8C);
+intensifySnowstorm(scene) {
+    // DARKEN SKY TO NEAR-NIGHT
+    if (scene.background && scene.background.isColor) {
+        scene.background.setHex(0x1A2438); // almost nightfall
+    }
+
+    // FOG BECOMES THICK LIKE DEATH
+    if (scene.fog) {
+        scene.fog.near = 3;
+        scene.fog.far = 18;
+    }
+
+    // SNOW EXPLODES INTO HYPER-STORM MODE
+    if (window.snowflakes) {
+        window.snowflakes.forEach(flake => {
+            // INSANE fall speed
+            flake.userData.fallSpeed = 0.4 + Math.random() * 0.25;
+
+            // hurricane-level sideways drift
+            flake.userData.driftSpeed = (Math.random() - 0.5) * 0.8;
+            
+            // random shake for chaotic motion
+            flake.userData.stormShake = true;
+        });
+    }
+
+    // ENABLE WORLD WIND
+    window.windEffect = true;
+    window.windPower = 3 + Math.random() * 2; // HUGE wind
+
+    // CAMERA SHAKES LIKE A HORROR MOVIE
+    window.extremeCameraShake = true;
+
+    // LIGHTS FLICKER AS IF POWER IS STRUGGLING
+    scene.traverse(obj => {
+        if (obj.isPointLight) {
+            obj.intensity = 10;
+            obj.distance = 20;
+            obj.castShadow = true;
+
+            // flicker effect
+            obj.userData.flicker = true;
         }
-        
-        // Increase snowfall speed
-        if (window.snowflakes) {
-            window.snowflakes.forEach(snowflake => {
-                snowflake.userData.fallSpeed *= 2;
-            });
-        }
-        
-        // Add wind effect
-        window.windEffect = true;
-    },
+    });
+
+    console.warn("⚠ ULTRA SNOWSTORM ACTIVATED — GOOD LUCK.");
+},
+
     
     spawnGoldenButterfly(scene, player) {
         const butterflyGroup = new THREE.Group();
