@@ -96,6 +96,7 @@ const IceMonsters = {
     
     // Use MonsterBase for player death
     playerDie() {
+        WorldEvents.resetSnowstorm(scene);
         const customHTML = `
             <h1 style="color: #FF6B6B; font-size: 45px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">❄️ FROZEN ❄️</h1>
             <h2 style="color: #FFB6B6; font-size: 36px; margin: 10px 0;">The Ice Monsters Won!</h2>
