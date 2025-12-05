@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Project - Frozen Ice Monster Defense</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        .pixel-border {
+            border: 4px solid #000;
+            box-shadow: 
+                0 0 0 2px #fff inset,
+                0 0 0 4px #000 inset,
+                4px 4px 0 0 rgba(0,0,0,0.3);
+        }
+        
+        .pixel-text {
+            text-shadow: 2px 2px 0 #000;
+            line-height: 1.6;
+        }
+        
+        #info {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            color: white;
+            background: #2d2d2d;
+            padding: 8px;
+            z-index: 100;
+            border: 3px solid #000;
+            box-shadow: 
+                0 0 0 1px #fff inset,
+                0 0 0 3px #000 inset,
+                4px 4px 0 0 rgba(0,0,0,0.4);
+            font-size: 7px;
+            max-width: 180px;
+        }
+        
+        #info h2 {
+            margin: 0 0 6px 0;
+            font-size: 9px;
+            color: #88ddff;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        #mode-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+        
+        #mode-toggle button {
+            padding: 8px 12px;
+            font-size: 7px;
+            font-family: 'Press Start 2P', cursive;
+            background: #764ba2;
+            color: white;
+            border: 3px solid #000;
+            cursor: pointer;
+            box-shadow: 
+                0 0 0 1px #fff inset,
+                0 0 0 3px #000 inset,
+                3px 3px 0 0 rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+        
+        #mode-toggle button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 
+                0 0 0 1px #fff inset,
+                0 0 0 3px #000 inset,
+                4px 4px 0 0 rgba(0,0,0,0.5);
+        }
+        
+        #mode-toggle button:active {
+            transform: translate(1px, 1px);
+            box-shadow: 
+                0 0 0 1px #fff inset,
+                0 0 0 3px #000 inset,
+                2px 2px 0 0 rgba(0,0,0,0.5);
+        }
+        
+        #mode-indicator {
+            margin-top: 6px;
+            text-align: center;
+            color: white;
+            font-size: 6px;
+            background: #2d2d2d;
+            padding: 4px;
+            border: 2px solid #000;
+            box-shadow: 0 0 0 1px #fff inset;
+        }
+        
+        #world-indicator {
+            position: absolute;
+            top: 60px;
+            left: 8px;
+            background: #4CAF50;
+            color: white;
+            padding: 6px 10px;
+            font-size: 7px;
+            z-index: 100;
+            border: 3px solid #000;
+            box-shadow: 
+                0 0 0 1px #fff inset,
+                0 0 0 3px #000 inset,
+                3px 3px 0 0 rgba(0,0,0,0.4);
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+        
+        #controls button {
+            padding: 10px 14px;
+            font-size: 12px;
+            font-family: 'Press Start 2P', cursive;
+            background: #fff;
+            border: 2px solid #000;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 0 rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        
+        #controls button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 0 rgba(0,0,0,0.3);
+        }
+        
+        #controls button:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0 0 rgba(0,0,0,0.3);
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #group-id {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #FFD700;
+            color: #000;
+            padding: 6px 12px;
+            font-size: 8px;
+            z-index: 100;
+            border: 3px solid #000;
+            box-shadow: 
+                0 0 0 1px #FFA500 inset,
+                0 0 0 3px #000 inset,
+                3px 3px 0 0 rgba(0,0,0,0.4);
+        }
+        
+        #score-display {
+            font-size: 7px;
+            color: #FFD700;
+            margin-bottom: 6px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        #health-container {
+            margin-bottom: 8px;
+        }
+        
+        #health-text {
+            margin-bottom: 3px;
+            font-size: 7px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        .health-bar-container {
+            width: 160px;
+            height: 12px;
+            background: #000;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #000;
+            position: relative;
+        }
+        
+        #health-bar {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+            image-rendering: pixelated;
+        }
+        
+        .info-box {
+            background: #1a1a1a;
+            padding: 6px;
+            border: 2px solid #444;
+            margin-top: 6px;
+            font-size: 6px;
+            line-height: 1.6;
+        }
+        
+        .info-box p {
+            margin: 2px 0;
+        }
+        
+        .pixel-modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2d4a3d;
+            padding: 8px 14px;
+            text-align: center;
+            z-index: 200;
+            border: 3px solid #000;
+            box-shadow: 
+                0 0 0 2px #fff inset,
+                0 0 0 3px #000 inset,
+                3px 3px 0 0 rgba(0,0,0,0.6);
+            width: 280px;
+        }
+        
+        .pixel-modal h1 {
+            margin: 0 0 3px 0;
+            font-size: 12px;
+            text-shadow: 1px 1px 0 #000;
+            line-height: 1;
+        }
+        
+        .pixel-modal h2 {
+            margin: 0 0 4px 0;
+            font-size: 8px;
+            text-shadow: 1px 1px 0 #000;
+            line-height: 1;
+        }
+        
+        .stats-box {
+            background: rgba(0,0,0,0.4);
+            padding: 4px 6px;
+            border: 2px solid rgba(255,255,255,0.2);
+            margin: 4px 0;
+        }
+        
+        .stats-box p {
+            margin: 1px 0;
+            font-size: 7px;
+            line-height: 1.1;
+        }
+        
+        .pixel-button {
+            padding: 4px 10px;
+            font-size: 7px;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            border: 2px solid #000;
+            cursor: pointer;
+            margin: 4px 0 0 0;
+            box-shadow: 
+                0 0 0 1px currentColor inset,
+                0 0 0 2px #000 inset,
+                2px 2px 0 0 rgba(0,0,0,0.6);
+            transition: transform 0.1s;
+        }
+        
+        .pixel-button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 
+                0 0 0 1px currentColor inset,
+                0 0 0 2px #000 inset,
+                3px 3px 0 0 rgba(0,0,0,0.6);
+        }
+        
+        .pixel-button:active {
+            transform: translate(1px, 1px);
+            box-shadow: 
+                0 0 0 1px currentColor inset,
+                0 0 0 2px #000 inset,
+                1px 1px 0 0 rgba(0,0,0,0.6);
+        }
+        
+/* MUCH SMALLER / NON-VERTICAL WORLD COMPLETE MODAL */
+#world-complete {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2d4a3d;
+    padding: 6px 10px;
+    text-align: center;
+    z-index: 200;
+    width: 160px;        /* MUCH SMALLER WIDTH */
+    border: 3px solid #000;
+    box-shadow:
+        0 0 0 2px #fff inset,
+        0 0 0 3px #000 inset,
+        2px 2px 0 0 rgba(0,0,0,0.6);
+}
+
+    /* FIX THE HUGE RIDICULOUS TEXT */
+    #world-complete h1 {
+        font-size: 10px;     /* smaller */
+        margin: 0 0 3px 0;
+        color: #FFD700;
+        text-shadow: 1px 1px 0 #000;
+    }
+
+    #world-complete h2 {
+        font-size: 7px;      /* smaller */
+        margin: 0 0 4px 0;
+        color: white;
+    }
+
+    /* SMALLER BUTTON TOO */
+    #world-complete .pixel-button {
+        padding: 3px 6px;
+        font-size: 6px;
+        background: #FF69B4;
+        margin-top: 4px;
+    }
+
+        
+        #game-over {
+            background: #1a1a4d;
+        }
+        
+        #game-over h1 {
+            color: #FFD700;
+        }
+        
+        #game-over h2 {
+            color: #ff6b6b;
+        }
+        
+        #game-over .pixel-button {
+            background: #4CAF50;
+        }
+        
+        #victory-screen {
+            background: #2d4a3d;
+        }
+        
+        #victory-screen h1 {
+            color: #FFD700;
+        }
+        
+        #victory-screen h2 {
+            color: #FFFFFF;
+        }
+        
+        #victory-screen .pixel-button {
+            background: #FFD700;
+            color: #000;
+        }
+        
+        #world-complete {
+            background: #2d4a3d;
+        }
+        
+        #world-complete h1 {
+            color: #FFD700;
+        }
+        
+        #world-complete h2 {
+            color: #FFFFFF;
+        }
+        
+        #world-complete .pixel-button {
+            background: #FF69B4;
+        }
+    </style>
+</head>
+<body>
+<div id="group-id">GROUP: 7394</div>
+
+<div id="mode-toggle">
+    <button onclick="toggleMode()">SWITCH MODE</button>
+    <div id="mode-indicator">PROTOTYPE</div>
+</div>
+
+<div id="world-indicator">WINTER</div>
+
+<div id="info">
+    <h2>FROZEN DEFENSE</h2>
+    <div id="score-display">SCORE: 0 | MONSTERS: 0</div>
+    <div id="health-container">
+        <div id="health-text">HP: 100/100</div>
+        <div class="health-bar-container">
+            <div id="health-bar" style="width: 100%;"></div>
+        </div>
+    </div>
+    <div class="info-box">
+        <p>WASD: MOVE</p>
+        <p>Q/E: ROTATE CAM</p>
+        <p>SPACE: ICE BLAST</p>
+        <p>J: JUMP & SCATTER</p>
+        <p style="color: #FFD700;">GOAL: REACH CASTLE</p>
+        <p style="color: #FF69B4;">COLLECT 3 GIFTS</p>
+        <p id="distance-to-castle" style="color: #88DDFF;">DIST: --</p>
+    </div>
+</div>
+
+<div id="game-over" class="pixel-modal">
+    <h1>FROZEN</h1>
+    <h2>Monsters Won</h2>
+    <div class="stats-box">
+        <p style="color: #FFD700;">Score: <span id="final-score">0</span></p>
+        <p style="color: #fff;">Killed: <span id="final-monsters">0</span></p>
+        <p style="color: #88DDFF;">Time: <span id="final-time">0</span>s</p>
+    </div>
+    <button class="pixel-button" onclick="window.gameManager.restartWorld()">RETRY</button>
+</div>
+
+<div id="victory-screen" class="pixel-modal">
+    <h1>VICTORY</h1>
+    <h2>Elsa Home!</h2>
+    <div class="stats-box">
+        <p style="color: #FFD700;">Score: <span id="victory-score">0</span></p>
+        <p style="color: #fff;">Killed: <span id="victory-monsters">0</span></p>
+        <p style="color: #88DDFF;">Time: <span id="victory-time">0</span>s</p>
+        <p style="color: #90EE90;">Bonus: +<span id="victory-bonus">0</span></p>
+    </div>
+    <button class="pixel-button" onclick="window.gameManager.restartWorld()">RETRY</button>
+</div>
+
+<div id="world-complete" class="pixel-modal">
+    <h1>DONE</h1>
+    <h2>Next?</h2>
+    <button class="pixel-button" onclick="window.gameManager.loadNextWorld()">SPRING</button>
+</div>
+
+<div id="controls">
+    <button id="up">↑</button>
+    <button id="down">↓</button>
+    <button id="left">←</button>
+    <button id="right">→</button>
+</div>
+
+<div id="canvas-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./texture-generator.js"></script>
+<script src="./monster-base.js"></script>
+<script src="./elsa.js"></script>
+<script src="./reindeer.js"></script>
+<script src="./olaf.js"></script>
+<script src="./ice-castle.js"></script>
+<script src="./penguin-hill.js"></script>
+<script src="./collectibles.js"></script>
+<script src="./ice-monsters.js"></script>
+<script src="./spring-world.js"></script>
+<script src="./spring-monsters.js"></script>
+<script src="./world-events.js"></script>
+<script src="./game-manager.js"></script>
+<script src="./main.js"></script>
+</body>
+</html>
